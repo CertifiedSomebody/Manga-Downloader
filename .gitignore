@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+
+# VS Code settings
+.vscode/
+
+# PyCharm settings
+.idea/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Ignore downloaded manga files
+downloads/
