@@ -14,39 +14,48 @@ def search_manga(title=None, language="en"):
         "title": title,
         "limit": 10,
         "contentRating[]": ["safe", "suggestive", "erotica"],
-        "includes[]": ["title", "description"],
+        "includes[]": ["cover_art"],  # ✅ Correct field for additional data
+        "availableTranslatedLanguage[]": [language]  # ✅ Searches only for translated titles
     }
 
     response = requests.get(search_url, params=params)
     if response.status_code != 200:
         print(f"❌ Failed to fetch manga list: {response.status_code}")
-        return [], language
+        return {}, language
 
     manga_data = response.json()
     manga_list = manga_data.get("data", [])
 
     if not manga_list:
         print("❌ No manga found with that title.")
-        return [], language
+        return {}, language
 
-    # ✅ Extracting correct titles
-    formatted_results = []
+    # ✅ Extracting correct titles safely and mapping manga titles to their IDs
+    formatted_results = {}
     for manga in manga_list:
         attributes = manga.get("attributes", {})
         titles = attributes.get("title", {})
-        
-        # Get the English title or fallback to any available title
-        manga_title = titles.get("en") or list(titles.values())[0] if titles else "Unknown Title"
+
+        # ✅ Improved title extraction logic: prioritize different languages
+        manga_title = titles.get("en") or titles.get("ja-ro") or titles.get("jp") or titles.get("kr") 
+        if not manga_title and titles:
+            manga_title = list(titles.values())[0]  # Fallback to first available title
+        manga_title = manga_title or "Unknown Title"
+
         manga_id = manga.get("id", "")
 
-        formatted_results.append((manga_id, manga_title))
+        formatted_results[manga_title] = manga_id
 
-    return formatted_results, language
+    # ✅ Return results sorted alphabetically by title
+    sorted_results = dict(sorted(formatted_results.items()))
 
+    return sorted_results, language
 
+# ✅ Test the function if run directly
 if __name__ == "__main__":
-    manga_list, language = search_manga()
-    if manga_list:
+    title = input("Enter manga title: ").strip()
+    manga_dict, language = search_manga(title)
+    if manga_dict:
         print("\n🔍 Search Results:")
-        for index, (manga_id, manga_title) in enumerate(manga_list, start=1):
+        for index, (manga_title, manga_id) in enumerate(manga_dict.items(), start=1):
             print(f"[{index}] {manga_title} (ID: {manga_id})")
